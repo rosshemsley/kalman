@@ -24,19 +24,19 @@ that the time series represents a hidden value that is static apart from a Brown
 component.
 
 ```go
-    var t time.Time
-    values := []float64{1.3, 10.2, 5.0, 3.4}
+var t time.Time
+values := []float64{1.3, 10.2, 5.0, 3.4}
 
-	model := models.NewSimpleModel(t, values[0], models.SimpleModelConfig{
-		InitialVariance:     1.0,
-		ProcessVariance:     1.0,
-		ObservationVariance: 2.0,
-	})
-	filter := kalman.NewKalmanFilter(model)
+model := models.NewSimpleModel(t, values[0], models.SimpleModelConfig{
+    InitialVariance:     1.0,
+    ProcessVariance:     1.0,
+    ObservationVariance: 2.0,
+})
+filter := kalman.NewKalmanFilter(model)
 
-	for _, v := range values[1:] {
-        t.Add(time.Second)
-        filter.Update(t, model.NewMeasurement(v))
-        fmt.Printf("filtered value: %f", model.Value(filter.State()))
-	}
+for _, v := range values[1:] {
+    t.Add(time.Second)
+    filter.Update(t, model.NewMeasurement(v))
+    fmt.Printf("filtered value: %f", model.Value(filter.State()))
+}
 ```
