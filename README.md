@@ -45,7 +45,7 @@ func main() {
 	filter := kalman.NewKalmanFilter(model)
 
 	for _, v := range values[1:] {
-		t.Add(time.Second)
+		t = t.Add(time.Second)
 		filter.Update(t, model.NewMeasurement(v))
 		fmt.Printf("filtered value: %f\n", model.Value(filter.State()))
 	}
