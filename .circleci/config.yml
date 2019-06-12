@@ -1,0 +1,17 @@
+version: 2.1
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.12 
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-pkg-cache
+      - run:
+          command: |
+            go test -cover ./...
+      - save_cache:
+          key: v1-pkg-cache
+          paths:
+            - "/go/pkg"
