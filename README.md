@@ -20,7 +20,7 @@ and velocity of a particle in the hidden state of the filter.
 
 For runnable examples, see `/examples`. Below, the most basic example of filtering
 a noisy time series. The model here is just a Brownian motion model, which assumes
-that the time series represents a hidden value is static apart from a Brownian noise
+that the time series represents a hidden value that is static apart from a Brownian noise
 component.
 
 ```go
@@ -36,7 +36,7 @@ component.
 
 	for _, v := range values[1:] {
         t.Add(time.Second)
-		filter.Update(t, model.NewMeasurement(v))
+        filter.Update(t, model.NewMeasurement(v))
         fmt.Printf("filtered value: %f", model.Value(filter.State()))
 	}
 ```
