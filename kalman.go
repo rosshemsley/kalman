@@ -43,6 +43,12 @@ func (kf *KalmanFilter) State() mat.Vector {
 	return kf.state
 }
 
+// SetCovariance resets the covariance of the Kalman Filter to the given value.
+func (kf *KalmanFilter) SetCovariance(covariance mat.Matrix) {
+	kf.covariance = mat.DenseCopyOf(covariance)
+}
+
+
 // Time returns the time for which the current hidden state is an estimate.
 // The time is monotone increasing.
 func (kf *KalmanFilter) Time() time.Time {
