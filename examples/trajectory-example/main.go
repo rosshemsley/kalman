@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"time"
 
 	"github.com/fogleman/gg"
@@ -115,10 +116,41 @@ func main() {
 		smoothedTrajectory = append(smoothedTrajectory, model.Position(filter.State()))
 	}
 
+	var t time.Time
+	var ms []kalman.MeasurementAtTime
+	for _, v := range noisyTrajectory {
+		t = t.Add(time.Second)
+		ms = append(ms, kalman.MeasurementAtTime{
+			Time:        t,
+			Measurement: *model.NewPositionMeasurement(v, 0.1),
+		})
+	}
+	smoother := kalman.NewKalmanSmoother(model)
+	forwardsStates, _ := smoother.ComputeForwardsStateChanges(ms...)
+	smoothedTrajectory = make([]mat.Vector, 0)
+
+	for _, vs := range forwardsStates {
+		smoothedTrajectory = append(smoothedTrajectory, vs.APoseterioriState)
+	}
+
+	smoothed, err := smoother.Smooth(ms...)
+	if err != nil {
+		panic(err)
+	}
+
+	log.Printf("len: %d, %d", len(smoothed), len(noisyTrajectory))
+	var vs []mat.Vector
+	for _, v := range smoothed {
+		vs = append(vs, model.Position(v.State))
+	}
+
 	dc.SetRGB(0, 1, 0)
 	drawTrajectory(dc, noisyTrajectory)
 	dc.SetRGB(1, 0, 0)
 	drawTrajectory(dc, smoothedTrajectory)
+	dc.SetRGB(0, 0, 1)
+	drawTrajectory(dc, vs)
+
 	dc.SavePNG("plot.png")
 }
 
