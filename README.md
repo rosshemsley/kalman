@@ -1,22 +1,28 @@
 # ⚡️Kalman Filter
 
-A package implementing the Kalman Filter equations for continuous time-indexed models (i.e. a time series),
-along with a collection of models for use in common cases, such as constant velocity motion and Brownian motion.
-Support for prediction, filtering, and sensor fusion are currently provided.
+[![](https://godoc.org/github.com/rosshemsley/kalman?status.svg)](https://godoc.org/github.com/rosshemsley/kalman)
+
+A package implementing Kalman filtering and smoothing for continuous time-indexed models with non-uniform time transitions.
+A collection of models are also provided, including a constant velocity motion model and a Brownian motion model.
+Support for prediction, filtering, smoothing and sensor fusion are currently implemented.
 
 ## Design
-The package has two main concepts,
+The package has two main components
 
-### Filter
-This manages the filtering and prediction of a hidden state using the KalmanFilter.
+### Kalman Filter/Smoother
+These implement state space estimation for a given model and measurements.
+
 
 ### Model
 
 The model (such as `models.LinearModel`) provide common example models for modelling
-time series data, such as `models.ConstantVelocityModel`, which models the position
-and velocity of a particle in the hidden state of the filter.
+time series data. For example `models.ConstantVelocityModel`, models the position
+and velocity of a particle over time.
+
 
 ## Examples
+
+![Alt text](examples/images/time_series_example_plot.png?raw=true "time series example")
 
 For runnable examples, see `/examples`. Below, a full runnable example of filtering
 a noisy time series. The model here is just a Brownian motion model, which assumes
@@ -44,7 +50,7 @@ func main() {
 	})
 	filter := kalman.NewKalmanFilter(model)
 
-	for _, v := range values[1:] {
+	for _, v := range values {
 		t = t.Add(time.Second)
 		filter.Update(t, model.NewMeasurement(v))
 		fmt.Printf("filtered value: %f\n", model.Value(filter.State()))

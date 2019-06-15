@@ -1,3 +1,7 @@
+// Package kalman implements estimation for time series with non-uniform time steps. 
+// Implementations of the Kalman Filter and Kalman Smoother are provided,
+// along with several built-in models for modelling common dynamic systems,
+// such as the constant-velocity model and a Brownian model.
 package kalman
 
 import (
@@ -43,11 +47,20 @@ func (kf *KalmanFilter) State() mat.Vector {
 	return kf.state
 }
 
+// Covariance returns the current covaraince of the model.
+func (kf *KalmanFilter) Covariance() mat.Matrix {
+	return kf.covariance
+}
+
 // SetCovariance resets the covariance of the Kalman Filter to the given value.
 func (kf *KalmanFilter) SetCovariance(covariance mat.Matrix) {
 	kf.covariance = mat.DenseCopyOf(covariance)
 }
 
+// SetState resets the state of the Kalman Filter to the given value.
+func (kf *KalmanFilter) SetState(state mat.Vector) {
+	kf.state = mat.VecDenseCopyOf(state)
+}
 
 // Time returns the time for which the current hidden state is an estimate.
 // The time is monotone increasing.
