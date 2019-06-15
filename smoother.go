@@ -12,7 +12,7 @@ import (
 type kalmanStateChange struct {
 	// The transition used to advance the model from the previous
 	// aPosteriori estimate to the current a Priori estimate.
-	// T_k
+	// x_{k|k-1} = F_k x_{k-1}
 	modelTransition mat.Matrix
 
 	// State before measurement taken, x_{k|k-1}, P_{k|k-1}
@@ -52,7 +52,7 @@ func (kf *KalmanSmoother)Smooth(measurements ...MeasurementAtTime) ([]models.Sta
 	
 	dims := ss[0].aPrioriState.Len()
 	C := mat.NewDense(dims, dims, nil)
-	aPosterioriCovarianceInv := mat.NewDense(dims, dims, nil)
+	aPrioriCovarianceInv := mat.NewDense(dims, dims, nil)
 
 	result := make([]models.State, n)
 	result[n-1].State = ss[n-1].APoseterioriState
@@ -61,9 +61,9 @@ func (kf *KalmanSmoother)Smooth(measurements ...MeasurementAtTime) ([]models.Sta
 	x := mat.NewVecDense(dims, nil)
 	P := mat.NewDense(dims, dims, nil)
 
-
 	for i := n - 2 ; i >= 0; i-- {
-		err = aPosterioriCovarianceInv.Inverse(ss[i+1].aPrioriCovariance)
+		// double check
+		err = aPrioriCovarianceInv.Inverse(ss[i+1].aPrioriCovariance)
 		if err != nil {
 			panic(err)
 		}
@@ -71,7 +71,7 @@ func (kf *KalmanSmoother)Smooth(measurements ...MeasurementAtTime) ([]models.Sta
 		C.Product(
 			ss[i].aPosterioriCovariance,
 			ss[i+1].modelTransition.T(),
-			aPosterioriCovarianceInv,
+			aPrioriCovarianceInv,
 		)
 
 		x.SubVec(result[i+1].State, ss[i+1].aPrioriState)
@@ -82,8 +82,8 @@ func (kf *KalmanSmoother)Smooth(measurements ...MeasurementAtTime) ([]models.Sta
 		P.Product(C, P, C.T())
 		P.Add(ss[i].aPosterioriCovariance, P)
 
-		result[i].State = x
-		result[i].Covariance = P
+		result[i].State = mat.VecDenseCopyOf(x)
+		result[i].Covariance = mat.DenseCopyOf(P)
 	}
 
 	return result, nil
@@ -99,25 +99,25 @@ func (kf *KalmanSmoother)ComputeForwardsStateChanges(measurements ...Measurement
 		dt := m.Time.Sub(filter.Time())
 		log.Printf("DT: %s", dt)
 
-		stateChange.modelTransition = kf.model.Transition(dt)
+		stateChange.modelTransition = mat.DenseCopyOf(kf.model.Transition(dt))
 		// prettyMat(stateChange.modelTransition)
 		err := filter.Predict(m.Time)
 		if err != nil {
 			return nil, err
 		}
 
-		stateChange.aPrioriState = filter.State()
-		stateChange.aPrioriCovariance = filter.Covariance()
+		stateChange.aPrioriState = mat.VecDenseCopyOf(filter.State())
+		stateChange.aPrioriCovariance = mat.DenseCopyOf(filter.Covariance())
 
 		err = filter.Update(m.Time, &m.Measurement)
 		if err != nil {
 			return nil, err
 		}
-		stateChange.APoseterioriState = filter.State()
+		stateChange.APoseterioriState = mat.VecDenseCopyOf(filter.State())
 		// fmt.Printf("STATE %d\n", i)
 		// prettyVec(filter.State())
 
-		stateChange.aPosterioriCovariance = filter.Covariance()
+		stateChange.aPosterioriCovariance = mat.DenseCopyOf(filter.Covariance())
 
 		// prettyMat(filter.Covariance())
 		
