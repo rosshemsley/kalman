@@ -1,3 +1,7 @@
+// Package kalman implements estimation for time series with non-uniform time steps. 
+// Implementations of the Kalman Filter and Kalman Smoother are provided,
+// along with several built-in models for modelling common dynamic systems,
+// such as the constant-velocity model and a Brownian model.
 package kalman
 
 import (

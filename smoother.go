@@ -2,8 +2,6 @@ package kalman
 
 import (
 	"time"
-	"log"
-	"fmt"
 
 	"github.com/rosshemsley/kalman/models"
 	"gonum.org/v1/gonum/mat"
@@ -24,28 +22,44 @@ type kalmanStateChange struct {
 	aPosterioriCovariance mat.Matrix
 }
 
+// KalmanSmoother implements Rauch–Tung–Striebel smoothing.
 type KalmanSmoother struct {
 	model models.LinearModel
 }
 
+// NewKalmanSmoother creates a new smoother for the given model.
 func NewKalmanSmoother(model models.LinearModel) *KalmanSmoother {
 	return &KalmanSmoother{
 		model: model, 
 	}
 }
 
+// MeasurementAtTime represents a measurement taken at a given time.
 type MeasurementAtTime struct {
 	models.Measurement
 	Time time.Time
 }
 
-func (kf *KalmanSmoother)Smooth(measurements ...MeasurementAtTime) ([]models.State, error){
+// NewMeasurementAtTime is a helper for initializing measurement at time structs.
+func NewMeasurementAtTime(t time.Time, m *models.Measurement) *MeasurementAtTime {
+	return &MeasurementAtTime {
+		Time:t,
+		Measurement: *m,
+	}
+}
+
+// Smooth computes optimal estimates of the model states by using all measurements.
+// This is done by running a regular Kalman Filter and then performing a backwards pass
+// using the Rauch–Tung–Striebel algorithm.
+// Better results can be achieved since each state is estimated based on the entire history
+// of the process, including the future and past observations.
+func (kf *KalmanSmoother)Smooth(measurements ...*MeasurementAtTime) ([]models.State, error){
 	n := len(measurements)
 	if n == 0 {
 		return make([]models.State, 0), nil
 	}
 
-	ss, err := kf.ComputeForwardsStateChanges(measurements...)
+	ss, err := kf.computeForwardsStateChanges(measurements...)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +76,6 @@ func (kf *KalmanSmoother)Smooth(measurements ...MeasurementAtTime) ([]models.Sta
 	P := mat.NewDense(dims, dims, nil)
 
 	for i := n - 2 ; i >= 0; i-- {
-		// double check
 		err = aPrioriCovarianceInv.Inverse(ss[i+1].aPrioriCovariance)
 		if err != nil {
 			panic(err)
@@ -89,18 +102,16 @@ func (kf *KalmanSmoother)Smooth(measurements ...MeasurementAtTime) ([]models.Sta
 	return result, nil
 }
 
-// ComputeForwardsStateChanges runs the regular KalmanFilter for the given measurements.
-func (kf *KalmanSmoother)ComputeForwardsStateChanges(measurements ...MeasurementAtTime) ([]kalmanStateChange, error) {
+// computeForwardsStateChanges runs the regular KalmanFilter for the given measurements.
+func (kf *KalmanSmoother)computeForwardsStateChanges(measurements ...*MeasurementAtTime) ([]kalmanStateChange, error) {
 	filter := NewKalmanFilter(kf.model)
 	result := make([]kalmanStateChange, len(measurements))
 
 	for i, m := range measurements {
 		stateChange := &result[i]
 		dt := m.Time.Sub(filter.Time())
-		log.Printf("DT: %s", dt)
 
 		stateChange.modelTransition = mat.DenseCopyOf(kf.model.Transition(dt))
-		// prettyMat(stateChange.modelTransition)
 		err := filter.Predict(m.Time)
 		if err != nil {
 			return nil, err
@@ -113,34 +124,10 @@ func (kf *KalmanSmoother)ComputeForwardsStateChanges(measurements ...Measurement
 		if err != nil {
 			return nil, err
 		}
+
 		stateChange.APoseterioriState = mat.VecDenseCopyOf(filter.State())
-		// fmt.Printf("STATE %d\n", i)
-		// prettyVec(filter.State())
-
 		stateChange.aPosterioriCovariance = mat.DenseCopyOf(filter.Covariance())
-
-		// prettyMat(filter.Covariance())
-		
 	}
 
 	return result, nil
-}
-
-func prettyMat(m mat.Matrix) {
-	rows, cols := m.Dims()
-
-	for r :=0; r != rows; r++ {
-		for c :=0; c != cols; c++ {
-			fmt.Printf("%.3f    ", m.At(r,c))
-		}
-		fmt.Printf("\n")
-	}
-	fmt.Printf("\n")
-}
-
-func prettyVec(v mat.Vector) {
-	for r :=0; r != v.Len(); r++ {
-		fmt.Printf("%.3f    ", v.AtVec(r))
-	}
-	fmt.Printf("\n")
 }

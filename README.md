@@ -1,8 +1,12 @@
 # ⚡️Kalman Filter
 
+[![](https://godoc.org/github.com/rosshemsley/kalman?status.svg)](https://godoc.org/github.com/rosshemsley/kalman)
+
 A package implementing the Kalman Filter equations for continuous time-indexed models (i.e. a time series),
 along with a collection of models for use in common cases, such as constant velocity motion and Brownian motion.
 Support for prediction, filtering, and sensor fusion are currently provided.
+
+
 
 ## Design
 The package has two main concepts,
