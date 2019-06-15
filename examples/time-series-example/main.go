@@ -26,8 +26,9 @@ func main() {
 
 	var hiddenXYs, originalXYs, filteredXYs plotter.XYs
 
+	t := startTime
 	for i, v := range noisy[1:] {
-		t := startTime.Add(time.Duration(i * int(time.Second)))
+		t = t.Add(time.Second)
 		filter.Update(t, model.NewMeasurement(v))
 
 		filteredXYs = append(filteredXYs, plotter.XY{
