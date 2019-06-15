@@ -10,8 +10,8 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-const W = 1000
-const H = 1000
+const W = 600
+const H = 600
 
 type Observation struct {
 	Time time.Time
